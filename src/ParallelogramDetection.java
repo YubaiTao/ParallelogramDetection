@@ -20,8 +20,9 @@
  */
 public class ParallelogramDetection {
     public static void main(String[] args) {
-        ImageLoader imgLoader = new ImageLoader("./TestImages/TestImage1c.jpg");
+        ImageLoader imgLoader = new ImageLoader("./TestImages/TestImage2c.jpg");
         ImageProcessor imgProcessor = new ImageProcessor(imgLoader.getMatrix());
+        imgProcessor.Sobel();
 
     }
 }

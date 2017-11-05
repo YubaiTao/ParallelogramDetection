@@ -38,7 +38,9 @@ public class ImageLoader {
                     int red = (int) (c.getRed() * 0.30);
                     int green = (int) (c.getGreen() * 0.59);
                     int blue = (int) (c.getBlue() * 0.11);
+                    // int average = (red + green + blue)/3;
                     Color newColor = new Color(red + green + blue, red + green + blue, red + green + blue);
+                    // Color newColor = new Color(average, average, average);
                     image.setRGB(j, i, newColor.getRGB());
                 }
             }
