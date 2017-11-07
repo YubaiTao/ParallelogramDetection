@@ -17,10 +17,11 @@ import java.nio.file.Files;
 public class ImageLoader {
     private String imagePath;
     private String grayScalePath;
+    public String ID;
     public ImageLoader(String path) {
         this.imagePath = path;
+        ID = getFileID(path);
         grayScalePath = grayScale();
-
     }
 
     private String grayScale() {
@@ -38,16 +39,14 @@ public class ImageLoader {
                     int red = (int) (c.getRed() * 0.30);
                     int green = (int) (c.getGreen() * 0.59);
                     int blue = (int) (c.getBlue() * 0.11);
-                    // int average = (red + green + blue)/3;
                     Color newColor = new Color(red + green + blue, red + green + blue, red + green + blue);
-                    // Color newColor = new Color(average, average, average);
                     image.setRGB(j, i, newColor.getRGB());
                 }
             }
 //            Color c = new Color(image.getRGB(100, 20));
 //            System.out.print(" " + c.getRed() + " " + c.getBlue() + " " + c.getGreen());
 //            System.out.print("\nWidth: " + width + "    Height: " + height);
-            String grayScaleImage = "./OutputImages/grayscale.jpg";
+            String grayScaleImage = "./OutputImages/" + ID +"_grayscale.jpg";
             File output = new File(grayScaleImage);
             ImageIO.write(image, "jpg", output);
             return grayScaleImage;
@@ -84,5 +83,32 @@ public class ImageLoader {
             i.printStackTrace();
             return null;
         }
+    }
+
+    private String getFileID(String path) {
+        char[] array = path.toCharArray();
+        int start = 0, end = 0;
+        for (int i = array.length - 1; i > -1; i--) {
+            if (array[i] == '.') {
+                end = i;
+                break;
+            }
+        }
+        for (int i = array.length - 1; i > -1; i--) {
+            if (array[i] == '/') {
+                start = i + 1;
+                break;
+            }
+        }
+        if (start >= end) {
+            return "";
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = start; i < end; i++) {
+            sb.append(array[i]);
+        }
+
+        return sb.toString();
     }
 }

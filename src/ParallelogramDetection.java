@@ -21,9 +21,22 @@
 public class ParallelogramDetection {
     public static void main(String[] args) {
         ImageLoader imgLoader = new ImageLoader("./TestImages/TestImage1c.jpg");
-        ImageProcessor imgProcessor = new ImageProcessor(imgLoader.getMatrix(), 90, 100);
+        ImageProcessor imgProcessor = new ImageProcessor(imgLoader.getMatrix(), imgLoader.ID, 180, 1000);
         imgProcessor.Sobel();
         imgProcessor.houghTransform();
+
+
+        /*
+        ImageLoader imgLoader_2 = new ImageLoader("./TestImages/TestImage2c.jpg");
+        ImageProcessor imgProcessor_2 = new ImageProcessor(imgLoader_2.getMatrix(), imgLoader_2.ID, 180, 1000);
+        imgProcessor_2.Sobel();
+        imgProcessor_2.houghTransform();
+
+        ImageLoader imgLoader_3 = new ImageLoader("./TestImages/TestImage3.jpg");
+        ImageProcessor imgProcessor_3 = new ImageProcessor(imgLoader_3.getMatrix(), imgLoader_3.ID, 180, 1000);
+        imgProcessor_3.Sobel();
+        imgProcessor_3.houghTransform();
+        */
 
     }
 }
