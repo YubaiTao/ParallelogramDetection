@@ -10,13 +10,28 @@ import java.util.List;
  * project: ParallelogramDetection
  *
  * @author YubaiTao on 29/10/2017.
+ *
+ *
  */
 public class ImageProcessor {
+    /* ---- Fields ---- */
+
     private String id;
     private int[][] image;
     private int[][] grayImage;
     private int width;
     private int height;
+
+    /* for non-maximum suppression */
+    private int[][] matrixGx;
+    private int[][] matrixGy;
+    // NOTICE:
+    //     This is calculated in x-y coordinate system
+    //     theta(gradient angle) = arctan(Gy / Gx)
+    // which x increasing "right"-direction; y increasing "down"-direction
+    private double[][] matrixGAngle;
+    private int[][] nmsImage;
+
     /* for hough transform */
     private int thetaStrides;
     private int pStrides;
@@ -25,11 +40,18 @@ public class ImageProcessor {
     private double cosArray[];
     private int[][] houghTable;
 
+    /* ----  Constructor ---- */
     public ImageProcessor(int[][] matrix, String id, int thetaStrides, int pStrides) {
         this.id = id;
         this.image = matrix;
         this.width = matrix[0].length;
         this.height = matrix.length;
+
+        this.matrixGx = new int[height][width];
+        this.matrixGy = new int[height][width];
+        this.matrixGAngle = new double[height][width];
+        this.nmsImage = new int[height][width];
+
         this.thetaStrides = thetaStrides;
         this.pStrides = pStrides;
         sinArray = new double[this.thetaStrides];
@@ -38,18 +60,20 @@ public class ImageProcessor {
         grayImage = image.clone();
     }
 
+    /* --------------------- public methods ----------------------- */
+
     public void Sobel() {
         int threshold = 30;
         /* sobel operators */
         int[][] sobelX = {
-                {-1, 0, 1},
-                {-2, 0, 2},
-                {-1, 0, 1}
+                {1, 0, -1},
+                {2, 0, -2},
+                {1, 0, -1}
         };
         int[][] sobelY = {
-                {-1, -2, -1},
+                {1, 2, 1},
                 {0, 0, 0},
-                {1, 2, 1}
+                {-1, -2, -1}
         };
 
         int[][] result = new int[height][width];
@@ -64,15 +88,28 @@ public class ImageProcessor {
                         image[i][j - 1] * sobelY[1][0] + image[i][j] * sobelY[1][1] + image[i][j + 1] * sobelY[1][2] +
                         image[i + 1][j - 1] * sobelY[2][0] + image[i][j + 1] * sobelY[2][1] + image[i + 1][j + 1] * sobelY[2][2];
 
+                matrixGx[i][j] = x;
+                matrixGy[i][j] = y;
+
                 int mag = (int) Math.sqrt(x * x + y * y);
                 result[i][j] = mag;
 
-//                if (result[i][j] < 0) {
+                if (result[i][j] > 255) {
+                    result[i][j] = 255;
+                }
+                // swap white and black
+                result[i][j] = 255 - result[i][j];
+
+                if (result[i][j] > 255 - threshold) {
+                    result[i][j] = 255;
+                }
+
+                /*
                 if (result[i][j] < threshold) {
                     result[i][j] = 255;
                 } else {
                     result[i][j] = 0;
-                }
+                } */
 
             }
         }
@@ -92,6 +129,36 @@ public class ImageProcessor {
         drawImage(result, output);
 
         image = result.clone();
+        nmsImage = result.clone();
+    }
+
+    /* non-maximum suppression implementation */
+    public void NMS() {
+        // int[][] matrixSector = new int[height][width];
+        // nmsImage = image.clone();
+
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                if (image[i][j] != 255) {
+                    // atan2(double y, double x)
+                    // y - the ordinate coordinate ("up" direction)
+                    // x - the abscissa coordinate ("right" direction)
+                    // so y need to convert the sign
+                    // return value is radian form, [-pi, pi]
+                    matrixGAngle[i][j] = Math.atan2(-matrixGy[i][j], matrixGx[i][j]);
+                    int secNum = matchSector(matrixGAngle[i][j]);
+                    if (!isValidEdge(secNum, i, j)) {
+                        nmsImage[i][j] = 255;
+                    }
+                }
+            }
+        }
+
+        image = nmsImage.clone();
+
+        String output = "./OutputImages/" + id + "_nms.jpg";
+        drawImage(nmsImage, output);
+
     }
 
 
@@ -100,9 +167,67 @@ public class ImageProcessor {
         List<Line> lineList = extractLines();
         drawLines(lineList, grayImage, "./OutputImages/" + id +"_Lines.jpg");
 
-        System.out.println("Yahoooooo!");
+        System.out.println("Hough Transform end for " + id + ".");
     }
 
+
+
+
+
+    /* --------------------- private methods ----------------------- */
+
+    /* ---- For NMS() ---- */
+    private int matchSector(double angle) {
+        // angle - > [-PI, PI]
+        int sectorNum = -1;
+        if (angle < 0) {
+            // cast to [0, 2*PI]
+            angle += 2*Math.PI;
+        }
+        int div = (int)(angle / (Math.PI / 8));
+        switch (div) {
+            case 0: case 7:
+            case 8: case 15: case 16:
+                sectorNum = 0;
+                break;
+            case 1: case 2:
+            case 9: case 10:
+                sectorNum = 1;
+                break;
+            case 3: case 4:
+            case 11: case 12:
+                sectorNum = 2;
+                break;
+            case 5: case 6:
+            case 13: case 14:
+                sectorNum = 3;
+                break;
+            default:
+                break;
+        }
+
+        return sectorNum;
+    }
+
+    /* judge whether a point should be suppressed */
+    private boolean isValidEdge(int secNum, int i, int j) {
+        // System.out.println("sec num in valid edge: " + secNum);
+        switch (secNum) {
+            case 0:
+                return (image[i][j] <= image[i][j - 1] && image[i][j] <= image[i][j + 1]);
+            case 1:
+                return (image[i][j] <= image[i + 1][j - 1] && image[i][j] <= image[i - 1][j + 1]);
+            case 2:
+                return (image[i][j] <= image[i - 1][j] && image[i][j] <= image[i + 1][j]);
+            case 3:
+                return (image[i][j] <= image[i - 1][j - 1] && image[i][j] <= image[i + 1][j + 1]);
+            case 4:
+                return true;
+        }
+        return false;
+    }
+
+    /* ---- For houghTransform ---- */
 
     /*
         i-j coordinate system.
@@ -121,8 +246,6 @@ public class ImageProcessor {
             sinArray[i] = Math.sin(curTheta);
             cosArray[i] = Math.cos(curTheta);
         }
-
-
 
 
         int pointCount = 0;
@@ -157,7 +280,7 @@ public class ImageProcessor {
 
 
     private List<Line> extractLines() {
-        int k = 20;
+        int k = 30;
         int accumulatorThreshold = 0;
         int maxValue = 0;
 
@@ -200,16 +323,21 @@ public class ImageProcessor {
         }
 
         for (Line l : lineList) {
-            System.out.print(" ****** " + l.pIndex + " " + l.thetaIndex);
+            // System.out.print(" ****** " + l.pIndex + " " + l.thetaIndex);
         }
-        System.out.println();
+        // System.out.println();
 
         return lineList;
     }
 
+
+
+    /* ---- draw functions ---- */
+
+
     private void drawLines(List<Line> lineList, int[][] m, String path) {
 
-        System.out.println("Line list length : " + lineList.size());
+        // System.out.println("Line list length : " + lineList.size());
         for (Line l : lineList) {
             drawLine(l, m);
         }
@@ -227,8 +355,8 @@ public class ImageProcessor {
         double p = pStride / 2 + pIndex * pStride;
         double theta = thetaStride / 2 + thetaIndex * thetaStride;
 
-        System.out.println("Theta : " + theta);
-        System.out.println("P : " + p);
+//        System.out.println("Theta : " + theta);
+//        System.out.println("P : " + p);
 
         /*
             p = i * cos(theta) + j * sin(theta)
@@ -284,6 +412,9 @@ public class ImageProcessor {
     }
 
 }
+
+
+/* ---- utility class ---- */
 
 class Line {
     public int pIndex;
