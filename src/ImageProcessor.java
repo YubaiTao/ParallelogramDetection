@@ -62,6 +62,10 @@ public class ImageProcessor {
 
     /* --------------------- public methods ----------------------- */
 
+    public void GaussianBlur() {
+
+    }
+
     public void Sobel() {
         int threshold = 30;
         /* sobel operators */
@@ -97,6 +101,7 @@ public class ImageProcessor {
                 if (result[i][j] > 255) {
                     result[i][j] = 255;
                 }
+
                 // swap white and black
                 result[i][j] = 255 - result[i][j];
 
@@ -158,6 +163,10 @@ public class ImageProcessor {
 
         String output = "./OutputImages/" + id + "_nms.jpg";
         drawImage(nmsImage, output);
+
+    }
+
+    public void thresholding() {
 
     }
 
