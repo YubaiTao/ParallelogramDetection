@@ -22,6 +22,7 @@ public class ParallelogramDetection {
     public static void main(String[] args) {
         ImageLoader imgLoader = new ImageLoader("./TestImages/TestImage1c.jpg");
         ImageProcessor imgProcessor = new ImageProcessor(imgLoader.getMatrix(), imgLoader.ID, 60, 1000);
+        imgProcessor.GaussianBlur(1, 5);
         imgProcessor.Sobel();
         imgProcessor.NMS();
         imgProcessor.houghTransform();
@@ -30,15 +31,18 @@ public class ParallelogramDetection {
 
         ImageLoader imgLoader_2 = new ImageLoader("./TestImages/TestImage2c.jpg");
         ImageProcessor imgProcessor_2 = new ImageProcessor(imgLoader_2.getMatrix(), imgLoader_2.ID, 180, 1000);
+        imgProcessor_2.GaussianBlur(1, 5);
         imgProcessor_2.Sobel();
         imgProcessor_2.NMS();
         imgProcessor_2.houghTransform();
 
         ImageLoader imgLoader_3 = new ImageLoader("./TestImages/TestImage3.jpg");
         ImageProcessor imgProcessor_3 = new ImageProcessor(imgLoader_3.getMatrix(), imgLoader_3.ID, 180, 1000);
+        imgProcessor_3.GaussianBlur(1, 3);
         imgProcessor_3.Sobel();
         imgProcessor_3.NMS();
         imgProcessor_3.houghTransform();
+
 
 
     }

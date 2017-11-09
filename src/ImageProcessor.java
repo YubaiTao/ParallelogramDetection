@@ -16,11 +16,14 @@ import java.util.List;
 public class ImageProcessor {
     /* ---- Fields ---- */
 
-    private String id;
+    private final String id;
     private int[][] image;
     private int[][] grayImage;
     private int width;
     private int height;
+
+    /* for gaussian blur */
+    private int[][] gaussianImage;
 
     /* for non-maximum suppression */
     private int[][] matrixGx;
@@ -47,6 +50,8 @@ public class ImageProcessor {
         this.width = matrix[0].length;
         this.height = matrix.length;
 
+        this.gaussianImage = new int[height][width];
+
         this.matrixGx = new int[height][width];
         this.matrixGy = new int[height][width];
         this.matrixGAngle = new double[height][width];
@@ -62,7 +67,31 @@ public class ImageProcessor {
 
     /* --------------------- public methods ----------------------- */
 
-    public void GaussianBlur() {
+    public void GaussianBlur(int sigma, int scale) {
+        // G(x, y) = (1 / 2 * PI * sigma * sigma) ^ -(x * x + y * y) / 2 * sigma * sigma
+        double[][] mask = new double[scale][scale];
+        gaussianMask(mask, scale, sigma);
+        int corner = scale / 2;
+        for (int i = corner; i < height - corner; i++) {
+            for (int j = corner; j < width - corner; j++) {
+                int value = doGaussian(mask, scale, i, j);
+                if (value > 255) {
+                    gaussianImage[i][j] = 255;
+                } else {
+                    gaussianImage[i][j] = value;
+                }
+            }
+        }
+
+        String output = "./OutputImages/" + id + "_gaussian.jpg";
+        drawImage(gaussianImage, output);
+
+//        for (int i = 0; i < 5; i++) {
+//            for (int j = 0; j < 5; j++) {
+//                System.out.print(mask[i][j] + " ");
+//            }
+//            System.out.println();
+//        }
 
     }
 
@@ -184,6 +213,40 @@ public class ImageProcessor {
 
 
     /* --------------------- private methods ----------------------- */
+
+    /* ---- For GaussianBlur() --- */
+    private double gaussian(int x, int y, int sigma) {
+        double exponent = -(x * x + y * y) / 2 * sigma * sigma;
+        double multiplier = 1 / (2 * Math.PI * sigma * sigma);
+
+        return multiplier * Math.pow(Math.E, exponent);
+    }
+
+    // scale should be odd number
+    private void gaussianMask(double[][] mask, int scale, int sigma) {
+        // start at index 0
+        int center = scale / 2;
+        for (int i = 0; i < scale; i++) {
+            for (int j = 0; j < scale; j++) {
+                double cur = gaussian(i - center, j - center, sigma);
+                System.out.println("gaussian: " + cur);
+                mask[i][j] = cur;
+            }
+        }
+
+    }
+
+    private int doGaussian(double[][] mask, int scale, int i, int j) {
+        int result = 0;
+        int cornerI = i - (scale / 2);
+        int cornerJ = j - (scale / 2);
+        for (int m = 0; m < scale; m++) {
+            for (int n = 0; n < scale; n++) {
+                result += (int)(image[cornerI + m][cornerJ + n] * mask[m][n]);
+            }
+        }
+        return result;
+    }
 
     /* ---- For NMS() ---- */
     private int matchSector(double angle) {
