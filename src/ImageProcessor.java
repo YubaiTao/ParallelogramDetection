@@ -39,9 +39,13 @@ public class ImageProcessor {
     private int thetaStrides;
     private int pStrides;
     /* Save sin and cos values for future calculation. */
-    private double sinArray[];
-    private double cosArray[];
+    private double[] sinArray;
+    private double[] cosArray;
     private int[][] houghTable;
+
+    /* for threshold */
+    private int[][] t1Image;
+    private int[][] t2Image;
 
     /* ----  Constructor ---- */
     public ImageProcessor(int[][] matrix, String id, int thetaStrides, int pStrides) {
@@ -63,6 +67,9 @@ public class ImageProcessor {
         cosArray = new double[this.thetaStrides];
         houghTable = new int[thetaStrides][pStrides];
         grayImage = image.clone();
+
+        this.t1Image = new int[height][width];
+        this.t2Image = new int[height][width];
     }
 
     /* --------------------- public methods ----------------------- */
@@ -83,20 +90,16 @@ public class ImageProcessor {
             }
         }
 
+
         String output = "./OutputImages/" + id + "_gaussian.jpg";
         drawImage(gaussianImage, output);
 
-//        for (int i = 0; i < 5; i++) {
-//            for (int j = 0; j < 5; j++) {
-//                System.out.print(mask[i][j] + " ");
-//            }
-//            System.out.println();
-//        }
+        image = gaussianImage.clone();
 
     }
 
     public void Sobel() {
-        int threshold = 30;
+        int threshold = 0;
         /* sobel operators */
         int[][] sobelX = {
                 {1, 0, -1},
@@ -188,15 +191,64 @@ public class ImageProcessor {
             }
         }
 
+
+
         image = nmsImage.clone();
 
         String output = "./OutputImages/" + id + "_nms.jpg";
         drawImage(nmsImage, output);
 
+        System.out.println("Non-maximum suppression end for " + id + ".");
     }
 
-    public void thresholding() {
+    /* threshold the image, use double threshold */
+    public void threshold(int t2) {
+        // 8-neighbours
+        int t1 = t2 / 2;
+        int[][] interPixels = new int[height][width];
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                t1Image[i][j] = image[i][j];
+                t2Image[i][j] = image[i][j];
+                if (image[i][j] + t1 > 255) {
+                    t1Image[i][j] = 255;
+                }
+                if (image[i][j] + t2 > 255) {
+                    t2Image[i][j] = 255;
+                }
+            }
+        }
 
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                if (t2Image[i][j] != 255) {
+                    checkNeighbors(interPixels, i, j);
+                }
+            }
+        }
+
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                if (interPixels[i][j] != 0 && t2Image[i][j] == 255) {
+                    t2Image[i][j] = interPixels[i][j];
+                }
+            }
+        }
+
+        // clean the boundary of the image
+        cleanBoundary(t1Image, 5);
+        cleanBoundary(t2Image, 5);
+
+        String interFile = "./OutputImages/" + id + "_interT.jpg";
+        drawImage(interPixels, interFile);
+
+        String t1File = "./OutputImages/" + id + "_t1.jpg";
+        String t2File = "./OutputImages/" + id + "_t2.jpg";
+        drawImage(t1Image, t1File);
+        drawImage(t2Image, t2File);
+
+        image = t2Image.clone();
+        System.out.println("Threshold end for " + id + ".");
     }
 
 
@@ -229,7 +281,6 @@ public class ImageProcessor {
         for (int i = 0; i < scale; i++) {
             for (int j = 0; j < scale; j++) {
                 double cur = gaussian(i - center, j - center, sigma);
-                System.out.println("gaussian: " + cur);
                 mask[i][j] = cur;
             }
         }
@@ -299,7 +350,24 @@ public class ImageProcessor {
         return false;
     }
 
-    /* ---- For houghTransform ---- */
+    /* ---- For threshold() ---- */
+    private void checkNeighbors(int[][] inter, int i, int j) {
+        // add connected points to the t2Image from t1Image
+        if (i < 2 || j < 2 || i > width - 2 || j > height - 2) {
+            return;
+        }
+        for (int m = 0; m < 3; m++) {
+            for (int n = 0; n < 3; n++) {
+                if (t2Image[i - 1 + m][j - 1 + n] == 255 && inter[i - 1 + m][j - 1 + n] == 0
+                        && t1Image[i - 1 + m][j - 1 + m] != 255) {
+                    inter[i - 1 + m][j - 1 + n] = t1Image[i - 1 + m][j - 1 + n];
+                }
+            }
+        }
+
+    }
+
+    /* ---- For houghTransform() ---- */
 
     /*
         i-j coordinate system.
@@ -468,7 +536,6 @@ public class ImageProcessor {
         File newImgFile = new File(path);
         int width = matrix[0].length;
         int height = matrix.length;
-        // System.out.println(" " + width + " " + height);
         try {
             BufferedImage image = new BufferedImage(matrix[0].length, matrix.length, BufferedImage.TYPE_3BYTE_BGR);
             for (int i = 0; i < width; i++) {
@@ -483,7 +550,37 @@ public class ImageProcessor {
         }
     }
 
+    /* get rid of the boundary caused by convolution */
+    private void cleanBoundary(int[][] matrix, int mag) {
+        for (int i = 0; i < mag; i++) {
+            for (int j = 0; j < height; j++) {
+                // gaussianImage[j][i] = image[j][i];
+                matrix[j][i] = 255;
+            }
+        }
+        for (int i = width - mag; i < width; i++) {
+            for (int j = 0; j < height; j++) {
+                // gaussianImage[j][i] = image[j][i];
+                matrix[j][i] = 255;
+            }
+        }
+        for (int i = 0; i < mag; i++) {
+            for (int j = 0; j < width; j++) {
+                // gaussianImage[i][j] = image[i][j];
+                matrix[i][j] = 255;
+            }
+        }
+        for (int i = height - mag; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                // gaussianImage[i][j] = image[i][j];
+                matrix[i][j] = 255;
+            }
+        }
+    }
 }
+
+
+
 
 
 /* ---- utility class ---- */
