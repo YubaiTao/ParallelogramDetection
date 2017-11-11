@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -18,6 +19,7 @@ public class ParallelogramDetector {
 
     private List<Line> lineDistinction() {
 
+        return new ArrayList<>();
     }
 }
 

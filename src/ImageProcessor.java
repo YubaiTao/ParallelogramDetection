@@ -420,7 +420,7 @@ public class ImageProcessor {
 
 
     private List<Line> extractLines() {
-        int k = 30;
+        int k = 100;
         int accumulatorThreshold = 0;
         int maxValue = 0;
 
@@ -435,14 +435,23 @@ public class ImageProcessor {
             }
         });
 
+        int lineCount = 0;
+
         for (int i = 0; i < houghTable.length; i++) {
             for (int j = 0; j < houghTable[0].length; j++) {
+
+
+
                 if (houghTable[i][j] > maxValue) {
                     maxValue = houghTable[i][j];
 
                 }
 
                 if (houghTable[i][j] > accumulatorThreshold) {
+
+                    lineCount += 1;
+
+
                     Line curLine = new Line (i, j, houghTable[i][j]);
                     if (minHeap.size() < k) {
                         minHeap.offer(curLine);
@@ -466,6 +475,8 @@ public class ImageProcessor {
             // System.out.print(" ****** " + l.pIndex + " " + l.thetaIndex);
         }
         // System.out.println();
+
+        System.out.println("The total line number is : " + lineCount);
 
         return lineList;
     }
