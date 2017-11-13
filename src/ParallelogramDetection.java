@@ -20,6 +20,7 @@
  */
 public class ParallelogramDetection {
     public static void main(String[] args) {
+        System.out.println("******************* First Image *******************");
         ImageLoader imgLoader = new ImageLoader("./TestImages/TestImage1c.jpg");
         ImageProcessor imgProcessor = new ImageProcessor(imgLoader.getMatrix(), imgLoader.ID, 60, 1000);
         imgProcessor.GaussianBlur(1, 5);
@@ -27,8 +28,12 @@ public class ParallelogramDetection {
         imgProcessor.NMS();
         imgProcessor.threshold(60);
         imgProcessor.houghTransform();
+        ParallelogramDetector pd = new ParallelogramDetector(imgProcessor);
+        pd.lineDistinction(30, 40);
+        System.out.println();
 
 
+        System.out.println("******************* Second Image *******************");
         ImageLoader imgLoader_2 = new ImageLoader("./TestImages/TestImage2c.jpg");
         ImageProcessor imgProcessor_2 = new ImageProcessor(imgLoader_2.getMatrix(), imgLoader_2.ID, 180, 1000);
         imgProcessor_2.GaussianBlur(1, 3);
@@ -36,8 +41,11 @@ public class ParallelogramDetection {
         imgProcessor_2.NMS();
         imgProcessor_2.threshold(40);
         imgProcessor_2.houghTransform();
+        ParallelogramDetector pd_2 = new ParallelogramDetector(imgProcessor_2);
+        pd_2.lineDistinction(10, 40);
+        System.out.println();
 
-
+        System.out.println("******************* Third Image *******************");
         ImageLoader imgLoader_3 = new ImageLoader("./TestImages/TestImage3.jpg");
         ImageProcessor imgProcessor_3 = new ImageProcessor(imgLoader_3.getMatrix(), imgLoader_3.ID, 180, 1000);
         imgProcessor_3.GaussianBlur(1, 3);
@@ -45,6 +53,9 @@ public class ParallelogramDetection {
         imgProcessor_3.NMS();
         imgProcessor_3.threshold(30);
         imgProcessor_3.houghTransform();
+        ParallelogramDetector pd_3 = new ParallelogramDetector(imgProcessor_3);
+        pd_3.lineDistinction(10, 40);
+        System.out.println();
 
 
 

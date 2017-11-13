@@ -16,14 +16,14 @@ import java.util.List;
 public class ImageProcessor {
     /* ---- Fields ---- */
 
-    private final String id;
+    public final String id;
     private int[][] image;
     private int[][] grayImage;
     private int width;
     private int height;
 
     /* for gaussian blur */
-    private int[][] gaussianImage;
+    private static int[][] gaussianImage;
 
     /* for non-maximum suppression */
     private int[][] matrixGx;
@@ -46,6 +46,12 @@ public class ImageProcessor {
     /* for threshold */
     private int[][] t1Image;
     private int[][] t2Image;
+
+    /* Empty Constructor */
+    public ImageProcessor(int[][] image) {
+        this.id = null;
+        this.image = image;
+    }
 
     /* ----  Constructor ---- */
     public ImageProcessor(int[][] matrix, String id, int thetaStrides, int pStrides) {
@@ -254,10 +260,22 @@ public class ImageProcessor {
 
     public void houghTransform() {
         fillTable();
-        List<Line> lineList = extractLines();
+        List<Line> lineList = extractLines(houghTable, 30);
         drawLines(lineList, grayImage, "./OutputImages/" + id +"_Lines.jpg");
 
         System.out.println("Hough Transform end for " + id + ".");
+    }
+
+    public int[][] getImage() {
+        return image;
+    }
+
+    public int[][] getHoughTable() {
+        return houghTable;
+    }
+
+    public int[][] getGrayImage() {
+        return grayImage;
     }
 
 
@@ -418,9 +436,12 @@ public class ImageProcessor {
         }
     }
 
-
-    private List<Line> extractLines() {
-        int k = 100;
+    /* deprecated method
+       use for test demonstration now
+       return a list of Line by dot number on the line as priority order
+    */
+    public static List<Line> extractLines(int[][] table, int k) {
+        // int k = 200;
         int accumulatorThreshold = 0;
         int maxValue = 0;
 
@@ -437,22 +458,17 @@ public class ImageProcessor {
 
         int lineCount = 0;
 
-        for (int i = 0; i < houghTable.length; i++) {
-            for (int j = 0; j < houghTable[0].length; j++) {
-
-
-
-                if (houghTable[i][j] > maxValue) {
-                    maxValue = houghTable[i][j];
-
+        for (int i = 0; i < table.length; i++) {
+            for (int j = 0; j < table[0].length; j++) {
+                if (table[i][j] > maxValue) {
+                    maxValue = table[i][j];
                 }
-
-                if (houghTable[i][j] > accumulatorThreshold) {
+                if (table[i][j] > accumulatorThreshold) {
 
                     lineCount += 1;
 
 
-                    Line curLine = new Line (i, j, houghTable[i][j]);
+                    Line curLine = new Line (i, j, table[i][j]);
                     if (minHeap.size() < k) {
                         minHeap.offer(curLine);
                     } else {
@@ -481,12 +497,31 @@ public class ImageProcessor {
         return lineList;
     }
 
+    /* extract all lines detected, except for some line with too few point numbers */
+    public static List<Line> extractAllLines(int[][] table, int threshold) {
+        List<Line> lineList = new LinkedList<>();
+        int lineCounter = 0;
+        for (int i = 0; i < table.length; i++) {
+            for (int j = 0; j < table[0].length; j++) {
+                if (table[i][j] > threshold) {
+                    Line curLine = new Line(i, j, table[i][j]);
+                    lineList.add(curLine);
+                    lineCounter += 1;
+                }
+            }
+        }
+
+        System.out.println("The reduced total line number is: " + lineCounter);
+
+        return lineList;
+    }
+
 
 
     /* ---- draw functions ---- */
 
 
-    private void drawLines(List<Line> lineList, int[][] m, String path) {
+    public void drawLines(List<Line> lineList, int[][] m, String path) {
 
         // System.out.println("Line list length : " + lineList.size());
         for (Line l : lineList) {
