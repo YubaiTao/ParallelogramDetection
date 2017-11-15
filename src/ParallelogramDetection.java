@@ -30,6 +30,8 @@ public class ParallelogramDetection {
         imgProcessor.houghTransform();
         ParallelogramDetector pd = new ParallelogramDetector(imgProcessor);
         pd.lineDistinction(30, 40);
+        pd.setUpParallelograms();
+        // pd.test();
         System.out.println();
 
 
@@ -43,6 +45,7 @@ public class ParallelogramDetection {
         imgProcessor_2.houghTransform();
         ParallelogramDetector pd_2 = new ParallelogramDetector(imgProcessor_2);
         pd_2.lineDistinction(10, 40);
+        pd_2.setUpParallelograms();
         System.out.println();
 
         System.out.println("******************* Third Image *******************");
@@ -55,6 +58,7 @@ public class ParallelogramDetection {
         imgProcessor_3.houghTransform();
         ParallelogramDetector pd_3 = new ParallelogramDetector(imgProcessor_3);
         pd_3.lineDistinction(10, 40);
+        pd_3.setUpParallelograms();
         System.out.println();
 
 

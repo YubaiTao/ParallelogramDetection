@@ -17,6 +17,7 @@ import java.nio.file.Files;
 public class ImageLoader {
     private String imagePath;
     private String grayScalePath;
+    public int[][] originalImage;
     public String ID;
     public ImageLoader(String path) {
         this.imagePath = path;

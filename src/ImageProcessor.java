@@ -17,6 +17,7 @@ public class ImageProcessor {
     /* ---- Fields ---- */
 
     public final String id;
+    public int[][] originalImage;
     private int[][] image;
     private int[][] grayImage;
     private int width;
@@ -57,6 +58,7 @@ public class ImageProcessor {
     public ImageProcessor(int[][] matrix, String id, int thetaStrides, int pStrides) {
         this.id = id;
         this.image = matrix;
+        this.originalImage = matrix.clone();
         this.width = matrix[0].length;
         this.height = matrix.length;
 
@@ -73,9 +75,16 @@ public class ImageProcessor {
         cosArray = new double[this.thetaStrides];
         houghTable = new int[thetaStrides][pStrides];
         grayImage = image.clone();
+        originalImage = new int[height][width];
 
         this.t1Image = new int[height][width];
         this.t2Image = new int[height][width];
+
+        for(int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                originalImage[i][j] = matrix[i][j];
+            }
+        }
     }
 
     /* --------------------- public methods ----------------------- */
@@ -549,6 +558,7 @@ public class ImageProcessor {
             p / cos(theta) = i + j * tan(theta)
             i = p / cos(theta) - j * tan(theta)
          */
+        // theta = 90 degree
         for (int j = 0; j < image[0].length; j++) {
             int i = (int)( (p / Math.cos(theta)) - j * Math.tan(theta));
             if (i < 0 || i > image.length) {
@@ -559,7 +569,17 @@ public class ImageProcessor {
 
     }
 
-    private void drawDot(int i, int j, int[][] m, int radius) {
+    public static void drawLine(double[] para, int[][] m, int[] dot1, int[] dot2) {
+        double p = para[1];
+        double theta = para[0];
+        for (int j = Math.min(dot1[1], dot2[1]); j < Math.max(dot1[1], dot2[1]); j++) {
+            int i = (int)( (p / Math.cos(theta)) - j * Math.tan(theta));
+            // i must in the image, cuz we regulated before
+            drawDot(i, j, m, 1);
+        }
+    }
+
+    public static void drawDot(int i, int j, int[][] m, int radius) {
         int iCor = i - radius;
         int jCor = j - radius;
         int length = 2 * radius + 1;
@@ -577,7 +597,7 @@ public class ImageProcessor {
 
 
     /* generate image from the pixel matrix */
-    private void drawImage(int[][] matrix, String path) {
+    public void drawImage(int[][] matrix, String path) {
         /* draw from bufferedImage */
         File newImgFile = new File(path);
         int width = matrix[0].length;
